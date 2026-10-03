@@ -1,0 +1,28 @@
+[package]
+name = "ai-quota-mini"
+version = "0.1.0"
+description = "AI Quota Mini - local Windows quota companion"
+authors = ["AI Quota Mini"]
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "ai_quota_mini_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2.0", features = ["tray-icon"] }
+thiserror = "2"
+tokio = { version = "1", features = ["io-util", "macros", "process", "sync", "time"] }
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
