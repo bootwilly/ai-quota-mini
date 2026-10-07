@@ -157,7 +157,7 @@ src-tauri/
 
 ## 驗證與限制
 
-本機驗證：14 項 TypeScript、15 項 Rust 測試通過；TypeScript / Vite release build、Rust 格式檢查及 NSIS 打包成功。
+本機驗證：14 項 TypeScript、24 項 Rust 測試通過；TypeScript / Vite release build、Rust 格式檢查及 NSIS 打包成功。
 
 測試涵蓋單 / 雙指針、0% / 100%、相同數值、多群組、超過兩視窗、無效數值、舊設定、配額解析與設定檔替換。原生 WebView2 另驗證真實 Codex / Antigravity 資料、指針設定保存、mini 三錶盤完整顯示及 console 無錯誤。
 
@@ -165,6 +165,8 @@ src-tauri/
 - 尚未驗證 macOS / Linux，Windows 為目前交付平台。
 - 指針 mini 保留群組資訊，錶盤多時視窗會比長條模式更高。
 - 未登入、連線失敗或帳號没有 quota，都可能無法取得數字。
+- Claude 端點實測（2026-10-07）：以本機 Claude Code 的 OAuth 憑證請求 `/api/oauth/usage` 成功。`five_hour`、`seven_day` 含 `utilization`（已用百分比）與 `resets_at`（RFC3339，含微秒與時區偏移），與解析一致；該帳號的 `seven_day_opus` / `seven_day_sonnet` 為 `null`，因此不顯示。回應另有 `limits`、`extra_usage` 等未使用欄位，解析時忽略。已依真實格式新增測試。
+- Claude 配額的原生視窗（長條與指針兩種模式）尚未在畫面上目視驗證：`tauri dev` 可啟動且無 panic，但此環境無法操作原生視窗。
 - Claude 配額使用非公開端點，Anthropic 調整後可能失效；僅支援以 Claude 帳號（Pro / Max）登入的 Claude Code，API key 登入沒有此配額。
 
 本倉庫未指定開源授權條款；公開原始碼不代表另行授予使用或散布授權。

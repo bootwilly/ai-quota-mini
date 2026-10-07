@@ -211,6 +211,38 @@ mod tests {
     }
 
     #[test]
+    fn parses_real_response_shape_with_extra_and_null_fields() {
+        // Shape observed from the live endpoint (2026-10-07); values are sample data.
+        let response = json!({
+            "five_hour": {
+                "utilization": 4.0,
+                "resets_at": "2026-10-07T17:39:59.898387+08:00",
+                "limit_dollars": null, "used_dollars": null,
+                "remaining_dollars": null, "locked_reason": null
+            },
+            "seven_day": {
+                "utilization": 1.0,
+                "resets_at": "2026-10-12T09:59:59.898409+08:00",
+                "limit_dollars": null, "used_dollars": null,
+                "remaining_dollars": null, "locked_reason": null
+            },
+            "seven_day_oauth_apps": null,
+            "seven_day_opus": null,
+            "seven_day_sonnet": null,
+            "iguana_necktie": {"utilization": 0.0, "resets_at": "2026-11-05T15:59:00+08:00"},
+            "limits": [{"kind": "session", "percent": 4}],
+            "extra_usage": {"is_enabled": false}
+        });
+        let snapshot = parse_usage_response(&response).unwrap();
+        let windows = &snapshot.groups[0].windows;
+        assert_eq!(windows.len(), 2);
+        assert!((windows[0].remaining_percent - 96.0).abs() < f64::EPSILON);
+        assert_eq!(windows[0].reset_at, Some(1_791_365_999));
+        assert!((windows[1].remaining_percent - 99.0).abs() < f64::EPSILON);
+        assert_eq!(windows[1].reset_at, Some(1_791_770_399));
+    }
+
+    #[test]
     fn keeps_model_specific_weekly_windows() {
         let response = json!({
             "five_hour": {"utilization": 0, "resets_at": null},
