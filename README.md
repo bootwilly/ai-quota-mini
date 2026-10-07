@@ -8,9 +8,9 @@ Windows 桌面 AI 帳號配額小工具，以 **TypeScript + Tauri v2 + Rust** �
 | --- | --- | --- |
 | Codex | 本機 CLI app-server 的 `account/rateLimits/read` | 顯示實際回傳的限額視窗與剩餘量 |
 | Antigravity | 本機 `agy` 結構化 `/usage` 回應 | Gemini 與 Claude / GPT 模型群組分開顯示 |
-| Claude Code | 尚未串接可驗證的獨立帳號配額介面 | 可勾選，但明確顯示無法提供配額 |
+| Claude Code | 讀取 Claude Code 已登入的 OAuth 憑證，查詢 Claude 帳號用量端點 | 顯示 5 小時與每週剩餘量（若有則含 Opus / Sonnet 每週） |
 
-不同 CLI 版本或帳號類型可能沒有配額資料。沒有資料時會顯示狀態，不推估剩餘量。Antigravity 的 Claude / GPT 配額不等於 Claude Code 訂閱配額；單次 CLI 執行的 token 數與費用也不等於帳號剩餘量。
+不同 CLI 版本或帳號類型可能沒有配額資料。沒有資料時會顯示狀態，不推估剩餘量。Antigravity 的 Claude / GPT 配額不等於 Claude 訂閱配額；單次 CLI 執行的 token 數與費用也不等於帳號剩餘量。
 
 ## 功能與操作
 
@@ -89,7 +89,7 @@ TypeScript UI / settings draft / polling
 Rust app state / settings persistence / tray
                 ├─ Codex app-server JSON-RPC
                 ├─ Antigravity agy structured JSON
-                └─ Claude Code unavailable provider
+                └─ Claude OAuth usage endpoint (HTTPS)
 ```
 
 前端處理呈現、設定草稿、更新排程與視窗模式；Rust 處理固定 CLI 指令、解析、設定讀寫與系統匣。資料階層為 provider → quota group → quota window，保留每個模型群組及限額。
@@ -112,7 +112,9 @@ agy.exe --print /usage --output-format json --print-timeout 15s
 
 ### Claude Code
 
-目前明確回報沒有可驗證的帳號配額來源。此 provider 不發送模型請求，不借用其他服務額度；未來可在相同 `ProviderSnapshot` 結構下串接可驗證介面。
+讀取 `%USERPROFILE%\.claude\.credentials.json`（或 `CLAUDE_CONFIG_DIR` 指定目錄）中 Claude Code 的登入 token，以 HTTPS 請求 `https://api.anthropic.com/api/oauth/usage`（帶 `anthropic-beta: oauth-2025-04-20`）。解析 `five_hour`、`seven_day`、`seven_day_opus`、`seven_day_sonnet` 的 `utilization`，剩餘量為 `100 - utilization`，`resets_at` 為重設時間。
+
+token 只存在記憶體，不寫入設定、不記錄，也不自行刷新；登入過期時提示重新開啟 Claude Code。此端點為非公開介面，可能隨版本變動；回應無法辨識時顯示狀態，不以 session 用量或成本推估。
 
 ## 設定與本機資料
 
@@ -131,7 +133,7 @@ agy.exe --print /usage --output-format json --print-timeout 15s
 
 `displayMode` 為 `bar` 或 `gauge`。舊設定缺少此欄位或未知模式時回退長條，保留其他設定。保存先寫暫存檔再替換；Windows 使用 `MoveFileExW` replacement，失敗時保留舊檔。保存失敗也不清除前端草稿。
 
-程式沿用 CLI 登入狀態，不執行登入 / 登出、不保存 API key、不修改 gateway。CLI 參數固定，表單不接受 shell 指令。查詢配額仍依賴各 CLI 與服務連線。
+程式沿用 CLI 登入狀態，不執行登入 / 登出、不保存 API key 或 token、不修改 gateway；Claude 查詢會讀取 Claude Code 的本機憑證並僅對 api.anthropic.com 發出請求。CLI 參數固定，表單不接受 shell 指令。查詢配額仍依賴各 CLI 與服務連線。
 
 ## 原始碼結構
 
@@ -155,7 +157,7 @@ src-tauri/
 
 ## 驗證與限制
 
-本機驗證：14 項 TypeScript、15 項 Rust 測試通過；TypeScript / Vite release build、Rust 格式檢查及 NSIS 打包成功。
+本機驗證：14 項 TypeScript、24 項 Rust 測試通過；TypeScript / Vite release build、Rust 格式檢查及 NSIS 打包成功。
 
 測試涵蓋單 / 雙指針、0% / 100%、相同數值、多群組、超過兩視窗、無效數值、舊設定、配額解析與設定檔替換。原生 WebView2 另驗證真實 Codex / Antigravity 資料、指針設定保存、mini 三錶盤完整顯示及 console 無錯誤。
 
@@ -163,6 +165,8 @@ src-tauri/
 - 尚未驗證 macOS / Linux，Windows 為目前交付平台。
 - 指針 mini 保留群組資訊，錶盤多時視窗會比長條模式更高。
 - 未登入、連線失敗或帳號没有 quota，都可能無法取得數字。
-- Claude Code 獨立帳號剩餘配額尚未支援。
+- Claude 端點實測（2026-10-07）：以本機 Claude Code 的 OAuth 憑證請求 `/api/oauth/usage` 成功。`five_hour`、`seven_day` 含 `utilization`（已用百分比）與 `resets_at`（RFC3339，含微秒與時區偏移），與解析一致；該帳號的 `seven_day_opus` / `seven_day_sonnet` 為 `null`，因此不顯示。回應另有 `limits`、`extra_usage` 等未使用欄位，解析時忽略。已依真實格式新增測試。
+- Claude 配額的原生視窗（長條與指針兩種模式）尚未在畫面上目視驗證：`tauri dev` 可啟動且無 panic，但此環境無法操作原生視窗。
+- Claude 配額使用非公開端點，Anthropic 調整後可能失效；僅支援以 Claude 帳號（Pro / Max）登入的 Claude Code，API key 登入沒有此配額。
 
 本倉庫未指定開源授權條款；公開原始碼不代表另行授予使用或散布授權。

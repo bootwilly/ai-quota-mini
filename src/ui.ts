@@ -290,7 +290,7 @@ function renderSettings(settings: Settings): string {
       <p class="settings-intro">只會輪詢你開啟的服務，設定會儲存在本機。</p>
       <label class="setting-toggle"><span><strong>Codex</strong><small>讀取帳號配額限制</small></span><input type="checkbox" data-setting="codexEnabled" ${settings.codexEnabled ? "checked" : ""}><i></i></label>
       <label class="setting-toggle"><span><strong>Antigravity</strong><small>Gemini 與 Claude / GPT 模型</small></span><input type="checkbox" data-setting="antigravityEnabled" ${settings.antigravityEnabled ? "checked" : ""}><i></i></label>
-      <label class="setting-toggle"><span><strong>Claude Code</strong><small>需有可驗證的帳號配額來源</small></span><input type="checkbox" data-setting="claudeCodeEnabled" ${settings.claudeCodeEnabled ? "checked" : ""}><i></i></label>
+      <label class="setting-toggle"><span><strong>Claude Code</strong><small>5 小時與每週配額，沿用 Claude Code 登入</small></span><input type="checkbox" data-setting="claudeCodeEnabled" ${settings.claudeCodeEnabled ? "checked" : ""}><i></i></label>
       <label class="interval-field"><span><strong>更新頻率</strong><small>最短 30 秒，最長 60 分鐘</small></span><div class="number-wrap"><input type="number" min="30" max="3600" step="30" value="${settings.pollingIntervalSeconds}" data-setting="pollingIntervalSeconds"><span>秒</span></div></label>
       <fieldset class="display-mode-field"><legend>配額顯示方式</legend>
         <label class="mode-option"><input type="radio" name="displayMode" value="bar" data-setting="displayMode" ${settings.displayMode === "bar" ? "checked" : ""}><span><strong>長條</strong><small>保留原有長條進度</small></span></label>

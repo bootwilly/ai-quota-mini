@@ -5,6 +5,7 @@ src-tauri/target/
 src-tauri/gen/
 deliverables/
 output/
+publish/
 .playwright-cli/
 .env
 .env.*

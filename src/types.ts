@@ -39,5 +39,5 @@ export type SnapshotMap = Partial<Record<ProviderId, ProviderSnapshot>>;
 export const PROVIDER_META: Record<ProviderId, { name: string; description: string }> = {
   codex: { name: "Codex", description: "Codex 帳號配額" },
   antigravity: { name: "Antigravity", description: "Gemini 與 Claude / GPT 模型" },
-  claudeCode: { name: "Claude Code", description: "Claude Code 帳號配額" },
+  claudeCode: { name: "Claude Code", description: "Claude 訂閱配額" },
 };
